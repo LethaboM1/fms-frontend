@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import apiService from '../../services/api';
 
 const Login = ({ onLogin, onShowRegister, onShowForgotPassword }) => {
   const [formData, setFormData] = useState({
     employeeNumber: '',
     password: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,27 +35,40 @@ const Login = ({ onLogin, onShowRegister, onShowForgotPassword }) => {
     setIsLoading(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Attempting login with:', {
+        employeeNumber: formData.employeeNumber,
+        password: '***' // Don't log actual password
+      });
       
-      // Get registered users from localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const data = await apiService.login(
+        formData.employeeNumber, 
+        formData.password
+      );
       
-      // Find user by employee number
-      const foundUser = users.find(user => user.employeeNumber === formData.employeeNumber);
+      console.log('API Response:', data);
+      console.log('Data.User:', data.User);
+      console.log('Data.user:', data.user);
+      console.log('Full response structure:', JSON.stringify(data, null, 2));
       
-      if (foundUser) {
-        // Simple password check (in real app, use proper authentication)
-        if (foundUser.password === formData.password) {
-          onLogin(foundUser);
-        } else {
-          setError('Invalid password. Please try again.');
+      // Check different possible structures
+      const user = data.User || data.user || data;
+      console.log('Extracted user:', user);
+      
+      if (user) {
+        // Store user data
+        localStorage.setItem('user', JSON.stringify(user));
+        console.log('User stored in localStorage:', user);
+        
+        // Navigate to dashboard
+        if (onLogin) {
+          onLogin(user);
         }
       } else {
-        setError('Employee number not found. Please register first.');
+        throw new Error('No user data returned from server');
       }
     } catch (err) {
-      setError('An error occurred during login. Please try again.');
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +90,10 @@ const Login = ({ onLogin, onShowRegister, onShowForgotPassword }) => {
         e.preventDefault();
       }
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleForgotPassword = (e) => {
@@ -135,7 +154,9 @@ const Login = ({ onLogin, onShowRegister, onShowForgotPassword }) => {
               onError={(e) => {
                 // Fallback if image doesn't load
                 e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                if (e.target.nextSibling) {
+                  e.target.nextSibling.style.display = 'flex';
+                }
               }}
             />
           </div>
@@ -229,32 +250,89 @@ const Login = ({ onLogin, onShowRegister, onShowForgotPassword }) => {
                 Forgot password
               </a>
             </div>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={isLoading}
-              placeholder="Enter your password"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#28a745';
-                e.target.style.boxShadow = '0 0 0 2px rgba(40, 167, 69, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#ddd';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                placeholder="Enter your password"
+                style={{
+                  width: '100%',
+                  padding: '12px 46px 12px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'all 0.2s',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#28a745';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(40, 167, 69, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#ddd';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+              {/* Eye Icon */}
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  color: '#666',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.color = '#28a745'}
+                onMouseOut={(e) => e.target.style.color = '#666'}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                ) : (
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <button
