@@ -1,7 +1,7 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5131'; 
+const API_BASE_URL = 'http://fms.hillary.local:5131';
 const API_URL = `${API_BASE_URL}/api`;
 
-console.log('API Base URL:', API_BASE_URL); 
+console.log('API Base URL:', API_BASE_URL);
 
 const originalParse = JSON.parse;
 JSON.parse = function(text, reviver) {

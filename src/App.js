@@ -6,13 +6,14 @@ import AdminDashboard from './components/dashboards/AdminDashboard';
 import ManagerDashboard from './components/dashboards/ManagerDashboard';
 import DriverDashboard from './components/dashboards/DriverDashboard';
 import ServiceTruckDriverDashboard from './components/dashboards/ServiceTruckDriverDashboard';
-import AttendantDashboard from './components/dashboards/AttendantDashboard';
+import MachineLogBookDashboard from './components/dashboards/MachineLogBookDashboard';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('login');
   const [loading, setLoading] = useState(true);
+  const [selectedMachine, setSelectedMachine] = useState(null); 
 
   useEffect(() => {
     const currentUser = localStorage.getItem('user');
@@ -53,11 +54,25 @@ function App() {
   const showRegister = () => setCurrentView('register');
   const showForgotPassword = () => setCurrentView('forgot-password');
 
+  // Navigation handlers for different dashboards
+  const handleNavigateToAdmin = () => {
+    if (user?.role === 'admin') {
+      setCurrentView('dashboard'); // Admin dashboard is already default
+    }
+  };
+
+  const handleNavigateToMachineLogBook = () => {
+    setCurrentView('machine-log-book');
+  };
+
+  const handleBackToDriverDashboard = () => {
+    setCurrentView('dashboard');
+  };
+
   const renderDashboard = () => {
     console.log('renderDashboard called with user:', user);
     console.log('User role:', user?.role);
     
-    // FIXED: Changed from 'servicetruckdriver' to 'service_truck_driver'
     switch (user.role) {
       case 'admin':
         console.log('Rendering AdminDashboard');
@@ -67,13 +82,17 @@ function App() {
         return <ManagerDashboard user={user} onLogout={handleLogout} />;
       case 'driver':
         console.log('Rendering DriverDashboard');
-        return <DriverDashboard user={user} onLogout={handleLogout} />;
-      case 'service_truck_driver': // FIXED THIS LINE
+        return (
+          <DriverDashboard 
+            user={user} 
+            onLogout={handleLogout} 
+            onNavigateToAdmin={handleNavigateToAdmin}
+            onNavigateToMachineLogBook={handleNavigateToMachineLogBook}
+          />
+        );
+      case 'service_truck_driver':
         console.log('Rendering ServiceTruckDriverDashboard');
         return <ServiceTruckDriverDashboard user={user} onLogout={handleLogout} />;
-      case 'sasol_attendant':
-        console.log('Rendering AttendantDashboard');
-        return <AttendantDashboard user={user} onLogout={handleLogout} />;
       default:
         console.log('Rendering default AdminDashboard for role:', user.role);
         return <AdminDashboard user={user} onLogout={handleLogout} />;
@@ -103,6 +122,20 @@ function App() {
         return <ForgotPassword onShowLogin={showLogin} />;
       case 'dashboard':
         return user ? renderDashboard() : (
+          <Login 
+            onLogin={handleLogin} 
+            onShowRegister={showRegister}
+            onShowForgotPassword={showForgotPassword}
+          />
+        );
+      case 'machine-log-book': // ADD THIS CASE
+        return user ? (
+          <MachineLogBookDashboard 
+            user={user} 
+            onBack={handleBackToDriverDashboard}
+            selectedMachine={selectedMachine}
+          />
+        ) : (
           <Login 
             onLogin={handleLogin} 
             onShowRegister={showRegister}

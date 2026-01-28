@@ -1,13 +1,16 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import transactionService from '../../services/transactionService';
-import QRScanner from '../qr/QRScanner'; // Import the QRScanner component
+import QRScanner from '../qr/QRScanner';
+import { plantMasterList } from './plantMasterList';
 
 // ==================== INDEXEDDB SETUP ====================
 
 // Initialize IndexedDB for photo storage
 const initPhotoDatabase = async () => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('FleetPhotoDatabase', 2);
+    // Remove version number to prevent version conflict
+    const request = indexedDB.open('FleetPhotoDatabase');
     
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
@@ -334,7 +337,7 @@ const OdometerPhotoUpload = ({
         transactionId: transactionId || null,
         folderPath: folderPath,
         fileSize: fileSize,
-        dimensions: { width: 0, height: 0 }, // You can extract this if needed
+        dimensions: { width: 0, height: 0 },
         metadata: {
           uploadedBy: userId || 'unknown',
           uploadTime: now.toISOString(),
@@ -357,7 +360,7 @@ const OdometerPhotoUpload = ({
         timestamp: savedPhoto.timestamp,
         plantNumber: savedPhoto.plantNumber,
         folderPath: savedPhoto.folderPath,
-        thumbnail: savedPhoto.thumbnail // Store thumbnail for quick preview
+        thumbnail: savedPhoto.thumbnail
       });
       localStorage.setItem('odometerPhotoRefs', JSON.stringify(savedPhotoRefs));
       
@@ -640,7 +643,7 @@ const OdometerPhotoUpload = ({
                 cursor: (manualValue && photo && !uploading) ? 'pointer' : 'not-allowed',
                 fontSize: '14px',
                 fontWeight: '500'
-              }}
+            }}
             >
               {uploading ? 'Saving...' : 'Save with Photo'}
             </button>
@@ -1292,13 +1295,13 @@ const PhotoGalleryModal = ({ onClose, userId }) => {
                   color: 'white', 
                   border: 'none',
                   borderRadius: '6px', 
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                Close Details
-              </button>
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Close Details
+          </button>
             </div>
           </div>
         </div>
@@ -1602,9 +1605,875 @@ const CustomSiteModal = ({ onSave, onClose }) => {
   );
 };
 
+// Custom Fuel Store Modal Component
+const CustomFuelStoreModal = ({ onSave, onClose }) => {
+  const [storeName, setStoreName] = useState('');
+  const [storeNumber, setStoreNumber] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (!storeName.trim()) {
+      setError('Please enter a fuel store name');
+      return;
+    }
+    
+    const customFuelStore = storeNumber.trim() 
+      ? `${storeName} (${storeNumber})`
+      : storeName;
+    
+    onSave(customFuelStore);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '25px',
+        borderRadius: '12px',
+        maxWidth: '400px',
+        width: '100%'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, color: '#1b5e20' }}>⛽ Add Custom Fuel Store</h3>
+          <button 
+            onClick={onClose} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '24px', 
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {error && (
+          <div style={{
+            backgroundColor: '#ffebee',
+            color: '#c62828',
+            padding: '10px',
+            borderRadius: '6px',
+            marginBottom: '15px',
+            border: '1px solid #ef9a9a',
+            fontSize: '14px'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Fuel Store Name: *
+          </label>
+          <input
+            type="text"
+            value={storeName}
+            onChange={(e) => {
+              setStoreName(e.target.value);
+              setError('');
+            }}
+            placeholder="Enter fuel store name..."
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #1b5e20',
+              borderRadius: '6px',
+              fontSize: '16px'
+            }}
+            required
+          />
+        </div>
+
+        <div style={{ marginBottom: '25px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Store Number (Optional):
+          </label>
+          <input
+            type="text"
+            value={storeNumber}
+            onChange={(e) => setStoreNumber(e.target.value)}
+            placeholder="Enter store number..."
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '16px'
+            }}
+          />
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '10px',
+          borderTop: '1px solid #eee',
+          paddingTop: '20px'
+        }}>
+          <button 
+            onClick={handleSave}
+            disabled={!storeName.trim()}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: storeName.trim() ? '#1b5e20' : '#ccc', 
+              color: 'white', 
+              border: 'none',
+              borderRadius: '6px', 
+              cursor: storeName.trim() ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Add Store
+          </button>
+          
+          <button 
+            onClick={onClose}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: '#f5f5f5', 
+              color: '#333', 
+              border: '1px solid #ddd',
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== NEW COMPONENTS FOR SHIFT MANAGEMENT ====================
+
+// Signature Modal Component
+const SignatureModal = ({ onSave, onClose }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureData, setSignatureData] = useState(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1b5e20';
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    setSignatureData(canvas.toDataURL());
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setSignatureData(null);
+  };
+
+  const handleSave = () => {
+    if (!signatureData) {
+      alert('Please provide your signature');
+      return;
+    }
+    onSave(signatureData);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.9)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '30px',
+        borderRadius: '12px',
+        maxWidth: '500px',
+        width: '100%'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, color: '#1b5e20' }}>✍️ Driver Signature</h3>
+          <button 
+            onClick={onClose} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '24px', 
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <p style={{ color: '#666', marginBottom: '15px' }}>
+            Please sign in the box below to acknowledge your shift
+          </p>
+          
+          <div style={{
+            border: '2px solid #1b5e20',
+            borderRadius: '8px',
+            backgroundColor: 'white',
+            marginBottom: '15px',
+            overflow: 'hidden'
+          }}>
+            <canvas
+              ref={canvasRef}
+              width={400}
+              height={200}
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                  clientX: touch.clientX,
+                  clientY: touch.clientY
+                });
+                canvasRef.current.dispatchEvent(mouseEvent);
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                  clientX: touch.clientX,
+                  clientY: touch.clientY
+                });
+                canvasRef.current.dispatchEvent(mouseEvent);
+              }}
+              onTouchEnd={stopDrawing}
+              style={{
+                width: '100%',
+                height: '200px',
+                cursor: 'crosshair',
+                touchAction: 'none'
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
+            <button 
+              onClick={clearSignature}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#f5f5f5',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              🗑️ Clear
+            </button>
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '10px',
+          borderTop: '1px solid #eee',
+          paddingTop: '20px'
+        }}>
+          <button 
+            onClick={handleSave}
+            disabled={!signatureData}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: signatureData ? '#1b5e20' : '#ccc', 
+              color: 'white', 
+              border: 'none',
+              borderRadius: '6px', 
+              cursor: signatureData ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            ✅ Acknowledge & Save
+          </button>
+          
+          <button 
+            onClick={onClose}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: '#f5f5f5', 
+              color: '#333', 
+              border: '1px solid #ddd',
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Breakdown Tracking Modal
+const BreakdownModal = ({ onSave, onClose, shiftStartTime }) => {
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const now = new Date();
+    const currentTime = now.toTimeString().substring(0, 5);
+    setStartTime(currentTime);
+    
+    // Set end time to 1 hour from now by default
+    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+    setEndTime(oneHourLater.toTimeString().substring(0, 5));
+  }, []);
+
+  const handleSave = () => {
+    if (!startTime || !endTime) {
+      setError('Please enter both start and end times');
+      return;
+    }
+    
+    if (!reason.trim()) {
+      setError('Please enter a breakdown reason');
+      return;
+    }
+    
+    // Calculate hours
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    const hours = (end - start) / (1000 * 60 * 60);
+    
+    if (hours < 0) {
+      setError('End time must be after start time');
+      return;
+    }
+    
+    onSave({
+      startTime,
+      endTime,
+      reason,
+      hours: hours.toFixed(1)
+    });
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '25px',
+        borderRadius: '12px',
+        maxWidth: '500px',
+        width: '100%'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, color: '#d32f2f' }}>⚠️ Truck Breakdown</h3>
+          <button 
+            onClick={onClose} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '24px', 
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {error && (
+          <div style={{
+            backgroundColor: '#ffebee',
+            color: '#c62828',
+            padding: '10px',
+            borderRadius: '6px',
+            marginBottom: '15px',
+            border: '1px solid #ef9a9a',
+            fontSize: '14px'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Breakdown Start Time: *
+          </label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #d32f2f',
+              borderRadius: '6px',
+              fontSize: '16px'
+            }}
+            required
+          />
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Breakdown End Time: *
+          </label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #d32f2f',
+              borderRadius: '6px',
+              fontSize: '16px'
+            }}
+            required
+          />
+          {startTime && endTime && (
+            <div style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
+              Duration: {((new Date(`2000-01-01T${endTime}`) - new Date(`2000-01-01T${startTime}`)) / (1000 * 60 * 60)).toFixed(1)} hours
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '25px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+            Breakdown Reason: *
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Describe the breakdown issue..."
+            rows="3"
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              resize: 'vertical'
+            }}
+            required
+          />
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '10px',
+          borderTop: '1px solid #eee',
+          paddingTop: '20px'
+        }}>
+          <button 
+            onClick={handleSave}
+            disabled={!startTime || !endTime || !reason.trim()}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: (startTime && endTime && reason.trim()) ? '#d32f2f' : '#ccc', 
+              color: 'white', 
+              border: 'none',
+              borderRadius: '6px', 
+              cursor: (startTime && endTime && reason.trim()) ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            🚨 Flag Breakdown
+          </button>
+          
+          <button 
+            onClick={onClose}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: '#f5f5f5', 
+              color: '#333', 
+              border: '1px solid #ddd',
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// End Shift Confirmation Modal
+const EndShiftModal = ({ 
+  onConfirm, 
+  onClose, 
+  shiftData,
+  odometerKilos,
+  odometerHours,
+  onOdometerScan
+}) => {
+  const [showOdometerModal, setShowOdometerModal] = useState(null);
+  const [endOdometerKilos, setEndOdometerKilos] = useState(odometerKilos || '');
+  const [endOdometerHours, setEndOdometerHours] = useState(odometerHours || '');
+  const [closingRemarks, setClosingRemarks] = useState('');
+  const [error, setError] = useState('');
+
+  const handleOdometerUpload = (result) => {
+    const { type, value } = result;
+    if (type === 'kilos') {
+      setEndOdometerKilos(value);
+    } else {
+      setEndOdometerHours(value);
+    }
+    setShowOdometerModal(null);
+  };
+
+  const handleConfirm = () => {
+    if (!endOdometerKilos && !endOdometerHours) {
+      setError('Please provide at least one odometer reading (KM or Hours)');
+      return;
+    }
+    
+    onConfirm({
+      endOdometerKilos,
+      endOdometerHours,
+      closingRemarks,
+      endTime: new Date().toISOString()
+    });
+    onClose();
+  };
+
+  const calculateShiftHours = () => {
+    if (!shiftData?.startTime) return '0';
+    const start = new Date(shiftData.startTime);
+    const end = new Date();
+    const hours = (end - start) / (1000 * 60 * 60);
+    return hours.toFixed(1);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.9)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '25px',
+        borderRadius: '12px',
+        maxWidth: '600px',
+        width: '100%'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, color: '#1b5e20' }}>🏁 End Shift Confirmation</h3>
+          <button 
+            onClick={onClose} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '24px', 
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {error && (
+          <div style={{
+            backgroundColor: '#ffebee',
+            color: '#c62828',
+            padding: '10px',
+            borderRadius: '6px',
+            marginBottom: '15px',
+            border: '1px solid #ef9a9a',
+            fontSize: '14px'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div style={{ 
+          backgroundColor: '#f8f9fa', 
+          padding: '15px', 
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #e0e0e0'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '10px' }}>
+            <div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Shift Start</div>
+              <div style={{ fontSize: '16px', fontWeight: '600', color: '#1b5e20' }}>
+                {shiftData?.startTime ? new Date(shiftData.startTime).toLocaleString() : 'N/A'}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Shift Duration</div>
+              <div style={{ fontSize: '16px', fontWeight: '600', color: '#1b5e20' }}>
+                {calculateShiftHours()} hours
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Vehicle</div>
+              <div style={{ fontSize: '16px', fontWeight: '600', color: '#333' }}>
+                {shiftData?.plantNumber || 'N/A'}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Driver</div>
+              <div style={{ fontSize: '16px', color: '#333' }}>
+                {shiftData?.driverName || 'N/A'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ color: '#333', marginBottom: '15px' }}>📏 End of Shift Odometer Readings</h4>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>
+                Final Kilometers:
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="number"
+                  value={endOdometerKilos}
+                  onChange={(e) => setEndOdometerKilos(e.target.value)}
+                  placeholder="Enter KM"
+                  style={{ 
+                    flex: 1, 
+                    padding: '12px', 
+                    border: '1px solid #ddd', 
+                    borderRadius: '6px', 
+                    fontSize: '14px' 
+                  }}
+                  step="0.1"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowOdometerModal('kilos')}
+                  style={{ 
+                    padding: '12px 15px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  📸
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>
+                Final Hours:
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="number"
+                  value={endOdometerHours}
+                  onChange={(e) => setEndOdometerHours(e.target.value)}
+                  placeholder="Enter hours"
+                  style={{ 
+                    flex: 1, 
+                    padding: '12px', 
+                    border: '1px solid #ddd', 
+                    borderRadius: '6px', 
+                    fontSize: '14px' 
+                  }}
+                  step="0.1"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowOdometerModal('hours')}
+                  style={{ 
+                    padding: '12px 15px',
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  📸
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
+            Note: At least one reading (KM or Hours) is required to end shift
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '25px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>
+            Closing Remarks:
+          </label>
+          <textarea
+            value={closingRemarks}
+            onChange={(e) => setClosingRemarks(e.target.value)}
+            placeholder="Any notes about the shift..."
+            rows="3"
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '14px',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '10px',
+          borderTop: '1px solid #eee',
+          paddingTop: '20px'
+        }}>
+          <button 
+            onClick={handleConfirm}
+            disabled={!endOdometerKilos && !endOdometerHours}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: (endOdometerKilos || endOdometerHours) ? '#1b5e20' : '#ccc', 
+              color: 'white', 
+              border: 'none',
+              borderRadius: '6px', 
+              cursor: (endOdometerKilos || endOdometerHours) ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            ✅ Confirm End Shift
+          </button>
+          
+          <button 
+            onClick={onClose}
+            style={{ 
+              flex: 1,
+              padding: '12px 20px', 
+              backgroundColor: '#f5f5f5', 
+              color: '#333', 
+              border: '1px solid #ddd',
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== MAIN DRIVER DASHBOARD ====================
 
-const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
+const DriverDashboard = ({ user, onLogout, onNavigateToAdmin, onNavigateToMachineLogBook }) => {
   // Main state
   const [formData, setFormData] = useState({
     plantNumber: '',
@@ -1629,23 +2498,54 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
     remarks: ''
   });
 
+  // Shift Management State
+  const [shiftStatus, setShiftStatus] = useState('OFF DUTY');
+  const [shiftStartTime, setShiftStartTime] = useState(null);
+  const [shiftEndTime, setShiftEndTime] = useState(null);
+  const [shiftData, setShiftData] = useState(null);
+  const [currentVehicle, setCurrentVehicle] = useState(null);
+  
+  // Breakdown Tracking State
+  const [breakdowns, setBreakdowns] = useState([]);
+  const [isOnBreakdown, setIsOnBreakdown] = useState(false);
+  const [breakdownStartTime, setBreakdownStartTime] = useState(null);
+  
+  // Signature State
+  const [driverSignature, setDriverSignature] = useState(null);
+  const [signatureTimestamp, setSignatureTimestamp] = useState(null);
+  
+  // Custom Sites State
+  const [customSites, setCustomSites] = useState([]);
+  
+  // Custom Fuel Stores State
+  const [customFuelStores, setCustomFuelStores] = useState([]);
+  
+  // Modal States
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showOdometerModal, setShowOdometerModal] = useState(null);
   const [showPhotoGallery, setShowPhotoGallery] = useState(false);
   const [showReceiptCamera, setShowReceiptCamera] = useState(false);
   const [showFuelEditModal, setShowFuelEditModal] = useState(false);
   const [showCustomSiteModal, setShowCustomSiteModal] = useState(false);
+  const [showCustomFuelStoreModal, setShowCustomFuelStoreModal] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
+  const [showEndShiftModal, setShowEndShiftModal] = useState(false);
+  const [showFuelStoreQRScanner, setShowFuelStoreQRScanner] = useState(false);
+  
+  // Other States
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [shiftStatus, setShiftStatus] = useState('OFF DUTY');
-  const [shiftStartTime, setShiftStartTime] = useState(null);
-  const [currentVehicle, setCurrentVehicle] = useState(null);
   const [activeNav, setActiveNav] = useState('dashboard');
   const [odometerPhotos, setOdometerPhotos] = useState({
     kilos: null,
     hours: null
   });
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [transactionsPerPage, setTransactionsPerPage] = useState(5);
 
   // Add vehicle status state
   const [vehicleStatus, setVehicleStatus] = useState({
@@ -1666,6 +2566,170 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
 
+  // Calculate pagination variables
+  const indexOfLastTransaction = currentPage * transactionsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+
+  // Function to handle page changes
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top of table for better UX
+    window.scrollTo({
+      top: document.querySelector('.transactions-section')?.offsetTop || 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Function to render pagination buttons
+  const renderPagination = () => {
+    if (transactions.length <= transactionsPerPage) return null;
+    
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+
+    const maxVisiblePages = 5;
+    let startPage, endPage;
+    
+    if (totalPages <= maxVisiblePages) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      const maxPagesBeforeCurrent = Math.floor(maxVisiblePages / 2);
+      const maxPagesAfterCurrent = Math.ceil(maxVisiblePages / 2) - 1;
+      
+      if (currentPage <= maxPagesBeforeCurrent) {
+        startPage = 1;
+        endPage = maxVisiblePages;
+      } else if (currentPage + maxPagesAfterCurrent >= totalPages) {
+        startPage = totalPages - maxVisiblePages + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - maxPagesBeforeCurrent;
+        endPage = currentPage + maxPagesAfterCurrent;
+      }
+    }
+
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: '8px',
+        marginTop: '20px',
+        flexWrap: 'wrap'
+      }}>
+        {/* Previous Button */}
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: currentPage === 1 ? '#e0e0e0' : '#1b5e20',
+            color: currentPage === 1 ? '#666' : 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          ← Previous
+        </button>
+        
+        {/* First Page */}
+        {startPage > 1 && (
+          <>
+            <button
+              onClick={() => handlePageChange(1)}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: 'white',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: currentPage === 1 ? '600' : '400'
+              }}
+            >
+              1
+            </button>
+            {startPage > 2 && <span style={{ color: '#666' }}>...</span>}
+          </>
+        )}
+        
+        {/* Page Numbers */}
+        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map(number => (
+          <button
+            key={number}
+            onClick={() => handlePageChange(number)}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: currentPage === number ? '#1b5e20' : 'white',
+              color: currentPage === number ? 'white' : '#333',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: currentPage === number ? '600' : '400',
+              minWidth: '36px'
+            }}
+          >
+            {number}
+          </button>
+        ))}
+        
+        {/* Last Page */}
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span style={{ color: '#666' }}>...</span>}
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: 'white',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: currentPage === totalPages ? '600' : '400'
+              }}
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+        
+        {/* Next Button */}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: currentPage === totalPages ? '#e0e0e0' : '#1b5e20',
+            color: currentPage === totalPages ? '#666' : 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          Next →
+        </button>
+      </div>
+    );
+  };
+
   // Initialize IndexedDB on component mount
   useEffect(() => {
     const initializeDatabase = async () => {
@@ -1680,81 +2744,6 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
     initializeDatabase();
   }, []);
 
-  // Plant master list (same as admin)
-  const plantMasterList = {
-    'A-APB05': { name: 'ASPHALT PAVER BITELLI BB691', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APD06': { name: 'ASPHALT PAVER DYNAPAC DF145P', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APD07': { name: 'ASPHALT PAVER DYNAPAC DF145P', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APD08': { name: 'ASPHALT PAVER DYNAPAC F161-8W', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APD09': { name: 'ASPHALT PAVER DYNAPAC DF145P', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APD11': { name: 'ASPHALT PAVER DYNAPAC DF145P', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APN01': { name: 'ASPHALT PAVER NIGATA', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APV10': { name: 'ASPHALT PAVER VOGELE 1800 SPRAY JET', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'paving' },
-    'A-APP02': { name: 'ASPHALT MIXING PLANT MOBILE 40tph', type: 'Asphalt Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-APP03': { name: 'ASPHALT MIXING PLANT MOBILE 60tph', type: 'Asphalt Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-APP04': { name: 'ASPHALT MIXING PLANT AMMANN 140TPH', type: 'Asphalt Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-APP05': { name: 'ASPHALT MIXING PLANT AMMANN 140TPH', type: 'Asphalt Paver', fuelType: 'Diesel', category: 'plant' },
-    'A-APP06': { name: 'ASPHALT MIXING PLANT AMMANN 140TPH', type: 'Asphalt Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-ASR01': { name: 'ASPHALT SHUTTLE-BUGGY ROAD-TEC SB2500', type: 'Shuttle Buggy', fuelType: 'Diesel', category: 'paving' },
-    'A-ASR02': { name: 'ASPHALT SHUTTLE-BUGGY ROAD-TEC SB2500', type: 'Shuttle Buggy', fuelType: 'Diesel', category: 'paving' },
-    'A-BBS03': { name: 'BUS MBENZ SPRINTER 23 SEATER', type: 'Bus', fuelType: 'Diesel', category: 'transport' },
-    'A-BBS04': { name: 'BUS MBENZ SPRINTER 23 SEATER', type: 'Bus', fuelType: 'Diesel', category: 'transport' },
-    'A-BDT02': { name: 'BITUMEN TRAILER 1kl', type: 'Bitumen Trailer', fuelType: 'Bitumen', category: 'specialized' },
-    'A-BDT06': { name: 'CRACKSEALING TRAILER', type: 'Cracksealing Trailer', fuelType: 'Diesel', category: 'specialized' },
-    'A-BEP01': { name: 'BITUMEN EMULSION PLANT', type: 'Emulsion Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-BEP02': { name: 'BITUMEN EMULSION PLANT', type: 'Emulsion Plant', fuelType: 'Diesel', category: 'plant' },
-    'A-BNS08': { name: '0.5 TONNE BAKKIE 4X2 NISSAN', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BNS09': { name: '0.5 TONNE BAKKIE 4X2 NISSAN', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BNS10': { name: '0.5 TONNE BAKKIE 4X2 NISSAN', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BOC106': { name: '0.5 TONNE BAKKIE 4X2 CHEVY', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BOC107': { name: '0.5 TONNE BAKKIE 4X2 CHEVY', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BOC108': { name: '0.5 TONNE BAKKIE 4X2 CHEVY', type: 'Bakkie', fuelType: 'Petrol', category: 'light_vehicle' },
-    'A-BRM11': { name: 'BROOM BROCE RCT-350', type: 'Broom', fuelType: 'Diesel', category: 'cleaning' },
-    'A-BRM12': { name: 'BROOM BROCE RCT-350', type: 'Broom', fuelType: 'Diesel', category: 'cleaning' },
-    'A-BRM13': { name: 'BROOM BROCE RCT-350', type: 'Broom', fuelType: 'Diesel', category: 'cleaning' },
-    'A-BRM14': { name: 'BROOM BROCE RCT-350', type: 'Broom', fuelType: 'Diesel', category: 'cleaning' },
-    'A-BTH100': { name: '1.0 TONNE BAKKIE 4X2', type: 'Bakkie', fuelType: 'Diesel', category: 'light_vehicle' },
-    'A-BTH104': { name: '1.0 TONNE BAKKIE 4X2', type: 'Bakkie', fuelType: 'Diesel', category: 'light_vehicle' },
-    'A-BTH115': { name: '1.0 TONNE BAKKIE 4X2', type: 'Bakkie', fuelType: 'Diesel', category: 'light_vehicle' },
-    'A-CCK05': { name: 'KLEEMANN MOBICONE MCO 9 S EVO CONE', type: 'Cone Crusher', fuelType: 'Diesel', category: 'crushing' },
-    'A-CHR03': { name: 'RM HORIZONTAL IMPACT CRUSHER 100GO', type: 'Impact Crusher', fuelType: 'Diesel', category: 'crushing' },
-    'A-CJK06': { name: 'KLEEMANN MOBICAT MC 110 R EVO JAW', type: 'Jaw Crusher', fuelType: 'Diesel', category: 'crushing' },
-    'A-CSK01': { name: 'KLEEMANN MOBICAT MC 703 EVO SCREEN', type: 'Screen', fuelType: 'Diesel', category: 'screening' },
-    'A-CSM02': { name: 'METSO ST2.8 SCALPER SCREEN', type: 'Screen', fuelType: 'Diesel', category: 'screening' },
-    'A-CSC03': { name: 'CHIEFTAIN 600, DOUBLE DECK SCREEN', type: 'Screen', fuelType: 'Diesel', category: 'screening' },
-    'A-CSE07': { name: 'CHIPSPREADER ETNYRE', type: 'Chipspreader', fuelType: 'Diesel', category: 'paving' },
-    'A-CSE08': { name: 'CHIPSPREADER ETNYRE', type: 'Chipspreader', fuelType: 'Diesel', category: 'paving' },
-    'A-CSE09': { name: 'CHIPSPREADER ETNYRE', type: 'Chipspreader', fuelType: 'Diesel', category: 'paving' },
-    'A-CSE10': { name: 'CHIPSPREADER ETNYRE', type: 'Chipspreader', fuelType: 'Diesel', category: 'paving' },
-    'A-DOK13': { name: 'DOZER KOMATSU D65 20t', type: 'Dozer', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-DOK15': { name: 'DOZER KOMATSU D65 20t', type: 'Dozer', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-DOK16': { name: 'DOZER KOMATSU D155 40t', type: 'Dozer', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-EXK38': { name: 'EXCAVATOR PC500 50t TRACKED', type: 'Excavator', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-EXK42': { name: 'EXCAVATOR PC270 27t TRACKED', type: 'Excavator', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-EXK44': { name: 'EXCAVATOR PC450 45t TRACKED', type: 'Excavator', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-EXK46': { name: 'EXCAVATOR PC350 35t TRACKED', type: 'Excavator', fuelType: 'Diesel', category: 'earthmoving' },
-    'A-FDH39': { name: 'FLAT DECK HINO 5t', type: 'Truck', fuelType: 'Diesel', category: 'transport' },
-    'A-FDH23': { name: 'FLAT DECK HINO 5t', type: 'Truck', fuelType: 'Diesel', category: 'transport' },
-    'A-FDH26': { name: 'FLAT DECK HINO 5t', type: 'Truck', fuelType: 'Diesel', category: 'transport' },
-    'SLD2': { name: 'FUEL TRAILER', type: 'Fuel Trailer', fuelType: 'Diesel', category: 'fuel_trailer' },
-    'SLD3': { name: 'FUEL TRAILER', type: 'Fuel Trailer', fuelType: 'Diesel', category: 'fuel_trailer' },
-    'SLD7': { name: 'FUEL TRAILER', type: 'Fuel Trailer', fuelType: 'Diesel', category: 'fuel_trailer' },
-    'SLD09': { name: 'FUEL TRAILER', type: 'Fuel Trailer', fuelType: 'Diesel', category: 'fuel_trailer' },
-    'SLD10': { name: 'FUEL TRAILER', type: 'Fuel Trailer', fuelType: 'Diesel', category: 'fuel_trailer' },
-    'STD01': { name: 'STATIC TANK DIESEL 23m3', type: 'Static Tank', fuelType: 'Diesel', category: 'static_tank' },
-    'STD02': { name: 'STATIC TANK DIESEL 23m3', type: 'Static Tank', fuelType: 'Diesel', category: 'static_tank' },
-    'STD05': { name: 'STATIC TANK DIESEL 23m3', type: 'Static Tank', fuelType: 'Diesel', category: 'static_tank' },
-    'A-TAC07': { name: 'CAT 730 ADT 30t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-TAC08': { name: 'CAT 730 ADT 30t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-TAC09': { name: 'CAT 730 ADT 30t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-TAK10': { name: 'KOMATSU HM400 ADT 40t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-TAK11': { name: 'KOMATSU HM400 ADT 40t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-TAK12': { name: 'KOMATSU HM400 ADT 40t', type: 'Articulated Dump Truck', fuelType: 'Diesel', category: 'hauling' },
-    'A-ZBH03': { name: 'BACKPACK BLOWER HUSQVARNA', type: 'Blower', fuelType: 'Petrol', category: 'landscaping' },
-    'A-ZBH04': { name: 'BACKPACK BLOWER HUSQVARNA', type: 'Blower', fuelType: 'Petrol', category: 'landscaping' },
-    'A-ZBH05': { name: 'BACKPACK BLOWER HUSQVARNA', type: 'Blower', fuelType: 'Petrol', category: 'landscaping' },
-  };
-
   // Initialize data
   useEffect(() => {
     // Load user's recent transactions
@@ -1763,13 +2752,40 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
       .slice(0, 10);
     setTransactions(userTransactions);
 
-    // Check shift status from localStorage
+    // Load shift data from localStorage
     const savedShift = localStorage.getItem(`driver_${user.id}_shift`);
     if (savedShift) {
       const shiftData = JSON.parse(savedShift);
       setShiftStatus('ON DUTY');
       setShiftStartTime(shiftData.startTime);
-      setCurrentVehicle(shiftData.vehicle);
+      setShiftData(shiftData);
+      setCurrentVehicle(shiftData.plantNumber);
+      
+      // Load odometer readings from shift data
+      if (shiftData.startOdometerKilos) {
+        setFormData(prev => ({
+          ...prev,
+          odometerKilos: shiftData.startOdometerKilos
+        }));
+      }
+      if (shiftData.startOdometerHours) {
+        setFormData(prev => ({
+          ...prev,
+          odometerHours: shiftData.startOdometerHours
+        }));
+      }
+      
+      // Load signature if exists
+      if (shiftData.signature) {
+        setDriverSignature(shiftData.signature);
+        setSignatureTimestamp(shiftData.signatureTimestamp);
+      }
+      
+      // Load breakdowns if exists
+      if (shiftData.breakdowns) {
+        setBreakdowns(shiftData.breakdowns);
+        setIsOnBreakdown(shiftData.isOnBreakdown || false);
+      }
       
       // Update vehicle status
       setVehicleStatus(prev => ({
@@ -1807,20 +2823,30 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
     };
     
     loadSavedPhotos();
+    
+    // Load custom sites from localStorage
+    const savedCustomSites = localStorage.getItem(`driver_${user.id}_customSites`);
+    if (savedCustomSites) {
+      setCustomSites(JSON.parse(savedCustomSites));
+    }
+    
+    // Load custom fuel stores from localStorage
+    const savedCustomFuelStores = localStorage.getItem(`driver_${user.id}_customFuelStores`);
+    if (savedCustomFuelStores) {
+      setCustomFuelStores(JSON.parse(savedCustomFuelStores));
+    }
   }, [user.id]);
 
   // Helper function for today's distance
   const getTodayDistance = () => {
-    // This would typically calculate from transactions for today
     const today = new Date().toDateString();
     const todayTransactions = transactions.filter(t => 
       new Date(t.transactionDate).toDateString() === today
     );
-    // Sum distances from today's transactions
     return todayTransactions.reduce((sum, t) => sum + (parseFloat(t.odometerKilos) || 0), 0);
   };
 
-  // QR Scan handler
+  // QR Scan handler for vehicle
   const handleQRScan = (scannedData) => {
     let plantNumber = '';
     let plantInfo = null;
@@ -1857,6 +2883,37 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
 
     setShowQRScanner(false);
     alert(`✅ Vehicle scanned: ${plantNumber} - ${plantInfo.name}`);
+  };
+
+  // QR Scan handler for fuel store - UPDATED
+  const handleFuelStoreQRScan = (scannedData) => {
+    let fuelStore = '';
+    
+    if (typeof scannedData === 'string') {
+      try {
+        const parsedData = JSON.parse(scannedData);
+        fuelStore = parsedData.storeName || parsedData.name || scannedData;
+      } catch (error) {
+        fuelStore = scannedData;
+      }
+    }
+    
+    // Check if this is a custom store not in the list
+    if (fuelStore !== 'SASOL FLEET' && fuelStore !== 'STANDARD BANK FLEET' && 
+        !customFuelStores.includes(fuelStore)) {
+      // Add to custom stores
+      const updatedStores = [...customFuelStores, fuelStore];
+      setCustomFuelStores(updatedStores);
+      localStorage.setItem(`driver_${user.id}_customFuelStores`, JSON.stringify(updatedStores));
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      fuelStore: fuelStore
+    }));
+    
+    setShowFuelStoreQRScanner(false);
+    alert(`✅ Fuel store scanned: ${fuelStore}`);
   };
 
   // Odometer photo upload handler
@@ -1896,25 +2953,112 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
 
   // Custom site handler
   const handleAddCustomSite = (customSite) => {
+    // Add the new custom site to the list
+    const updatedCustomSites = [...customSites, customSite];
+    setCustomSites(updatedCustomSites);
+    
+    // Save to localStorage
+    localStorage.setItem(`driver_${user.id}_customSites`, JSON.stringify(updatedCustomSites));
+    
+    // Set the current value
     setFormData(prev => ({
       ...prev,
       contractType: customSite
     }));
+    
     setShowCustomSiteModal(false);
+    
+    alert(`✅ Custom site added: ${customSite}`);
   };
 
   // Custom fuel store handler
-  const handleCustomFuelStore = () => {
-    const customStore = prompt('Enter custom fuel store name:');
-    if (customStore && customStore.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        fuelStore: customStore.trim()
-      }));
-    }
+  const handleAddCustomFuelStore = (customStore) => {
+    // Add the new custom fuel store to the list
+    const updatedCustomStores = [...customFuelStores, customStore];
+    setCustomFuelStores(updatedCustomStores);
+    
+    // Save to localStorage
+    localStorage.setItem(`driver_${user.id}_customFuelStores`, JSON.stringify(updatedCustomStores));
+    
+    // Set the current value
+    setFormData(prev => ({
+      ...prev,
+      fuelStore: customStore
+    }));
+    
+    setShowCustomFuelStoreModal(false);
+    
+    alert(`✅ Custom fuel store added: ${customStore}`);
   };
 
-  // Shift handlers
+  // Signature handler
+  const handleSignatureSave = (signatureData) => {
+    setDriverSignature(signatureData);
+    setSignatureTimestamp(new Date().toISOString());
+    setShowSignatureModal(false);
+    
+    // Save to shift data
+    if (shiftData) {
+      const updatedShiftData = {
+        ...shiftData,
+        signature: signatureData,
+        signatureTimestamp: new Date().toISOString()
+      };
+      localStorage.setItem(`driver_${user.id}_shift`, JSON.stringify(updatedShiftData));
+      setShiftData(updatedShiftData);
+    }
+    
+    alert('✅ Signature saved successfully!');
+  };
+
+  // Breakdown handler
+  const handleBreakdownSave = (breakdownData) => {
+    const newBreakdown = {
+      ...breakdownData,
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+      shiftId: shiftData?.id,
+      startTimestamp: new Date(`2000-01-01T${breakdownData.startTime}`).toISOString(),
+      endTimestamp: new Date(`2000-01-01T${breakdownData.endTime}`).toISOString()
+    };
+    
+    const updatedBreakdowns = [...breakdowns, newBreakdown];
+    setBreakdowns(updatedBreakdowns);
+    setIsOnBreakdown(false); // Reset breakdown flag after saving
+
+    // Save to shift data
+    if (shiftData) {
+      const updatedShiftData = {
+        ...shiftData,
+        breakdowns: updatedBreakdowns,
+        isOnBreakdown: true
+      };
+      localStorage.setItem(`driver_${user.id}_shift`, JSON.stringify(updatedShiftData));
+      setShiftData(updatedShiftData);
+    }
+    
+    alert(`⚠️ Breakdown flagged: ${breakdownData.reason} (${breakdownData.hours} hours)`);
+  };
+
+  // helper function if vehicle happen under breakdown
+  const isTransactionDuringBreakdown = (transactionTime) => {
+    if (!breakdowns.length) return false;
+    
+    const transTime = new Date(transactionTime);
+    
+    return breakdowns.some(breakdown => {
+      const start = new Date(breakdown.startTimestamp);
+      const end = new Date(breakdown.endTimestamp);
+      return transTime >= start && transTime <= end;
+    });
+  };
+
+  const handleEndCurrentBreakdown = () => {
+    setIsOnBreakdown(false);
+    alert('Breakdown status cleared. Vehicle is back in operation.');
+  };
+  
+  // Shift start handler
   const handleShiftStart = () => {
     if (!formData.plantNumber) {
       alert('Please scan or enter a plant first to start your shift');
@@ -1922,9 +3066,35 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
       return;
     }
 
-    const startTime = new Date().toLocaleString();
+    // Check if odometer readings are provided
+    if (!formData.odometerKilos && !formData.odometerHours) {
+      alert('Please provide at least one odometer reading (KM or Hours) to start shift');
+      return;
+    }
+
+    const startTime = new Date().toISOString();
+    const shiftId = `shift_${Date.now()}_${user.id}`;
+    
+    const newShiftData = {
+      id: shiftId,
+      startTime: startTime,
+      plantNumber: formData.plantNumber,
+      plantName: formData.plantName,
+      plantType: formData.plantType,
+      driverName: user.fullName,
+      driverId: user.id,
+      startOdometerKilos: formData.odometerKilos,
+      startOdometerHours: formData.odometerHours,
+      odometerKilosPhotoId: formData.odometerKilosPhotoId,
+      odometerHoursPhotoId: formData.odometerHoursPhotoId,
+      status: 'ACTIVE',
+      breakdowns: [],
+      isOnBreakdown: false
+    };
+
     setShiftStatus('ON DUTY');
     setShiftStartTime(startTime);
+    setShiftData(newShiftData);
     setCurrentVehicle(formData.plantNumber);
 
     // Update vehicle status
@@ -1934,28 +3104,90 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
       shiftStart: startTime
     }));
 
-    const shiftData = {
-      startTime: startTime,
-      plantNumber: formData.plantNumber,
-      plantName: formData.plantName,
-      plantType: formData.plantType
-    };
-    localStorage.setItem(`driver_${user.id}_shift`, JSON.stringify(shiftData));
+    localStorage.setItem(`driver_${user.id}_shift`, JSON.stringify(newShiftData));
 
-    alert(`🚗 Shift started at ${startTime}\nVehicle: ${formData.plantNumber} - ${formData.plantName}`);
+    alert(`🚗 Shift started at ${new Date(startTime).toLocaleString()}\nVehicle: ${formData.plantNumber} - ${formData.plantName}\nOdometer: ${formData.odometerKilos || '0'} KM / ${formData.odometerHours || '0'} hrs`);
   };
 
+  // Shift end handler
   const handleShiftEnd = () => {
-    const endTime = new Date().toLocaleString();
+    setShowEndShiftModal(true);
+  };
+
+  // Confirm shift end
+  const handleConfirmShiftEnd = (endData) => {
+    const endTime = new Date().toISOString();
     const startTime = shiftStartTime;
     
-    const duration = startTime ? 
-      `${Math.round((new Date() - new Date(startTime)) / (1000 * 60 * 60))} hours` : 
-      'N/A';
+    // Calculate shift duration in hours and minutes
+    const start = new Date(startTime);
+    const end = new Date();
+    const diffMs = end - start;
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const duration = `${hours}h ${minutes}m`;
 
+    // Calculate total breakdown hours
+    const totalBreakdownHours = breakdowns.reduce((total, b) => total + parseFloat(b.hours || 0), 0);
+
+    // Save shift closure data
+    const shiftClosure = {
+      ...shiftData,
+      endTime: endTime,
+      endOdometerKilos: endData.endOdometerKilos,
+      endOdometerHours: endData.endOdometerHours,
+      closingRemarks: endData.closingRemarks,
+      totalBreakdownHours: totalBreakdownHours,
+      breakdowns: breakdowns,
+      signature: driverSignature,
+      signatureTimestamp: signatureTimestamp,
+      status: 'COMPLETED',
+      duration: duration,
+      totalHours: hours + (minutes / 60), // Total hours as decimal
+      productiveHours: hours + (minutes / 60) - totalBreakdownHours // Hours minus breakdowns
+    };
+
+    // Save to transaction service
+    try {
+      transactionService.saveShiftClosure(shiftClosure, user);
+    } catch (error) {
+      console.error('Error saving shift closure:', error);
+      // Fallback: save as regular transaction
+      transactionService.saveTransaction({
+        plantNumber: shiftData.plantNumber,
+        plantName: shiftData.plantName,
+        plantType: shiftData.plantType,
+        fuelQuantity: 0,
+        fuelStore: 'SHIFT_CLOSURE',
+        odometerKilos: endData.endOdometerKilos,
+        odometerHours: endData.endOdometerHours,
+        transactionType: 'Shift Closure',
+        contractType: 'Internal',
+        receiverName: user.fullName,
+        receiverCompany: user.company,
+        employmentNumber: user.employeeNumber,
+        transactionDate: new Date().toISOString().split('T')[0],
+        remarks: `SHIFT CLOSED: ${endData.closingRemarks || 'No remarks'} | Breakdowns: ${totalBreakdownHours}h | Duration: ${duration}`,
+        shiftStatus: 'SHIFT_ENDED',
+        shiftId: shiftData?.id,
+        driverName: user.fullName,
+        signature: driverSignature,
+        breakdownFlag: breakdowns.length > 0,
+        timestamp: new Date().toISOString(),
+        folderPath: `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/`
+      }, user);
+    }
+
+    // Reset states
     setShiftStatus('OFF DUTY');
     setShiftStartTime(null);
+    setShiftEndTime(endTime);
+    setShiftData(null);
     setCurrentVehicle(null);
+    setBreakdowns([]);
+    setIsOnBreakdown(false);
+    setDriverSignature(null);
+    setSignatureTimestamp(null);
     
     // Update vehicle status
     setVehicleStatus(prev => ({
@@ -1964,9 +3196,29 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
       shiftStart: null
     }));
     
+    // Clear form
+    setFormData(prev => ({
+      ...prev,
+      plantNumber: '',
+      plantName: '',
+      plantType: '',
+      odometerKilos: '',
+      odometerHours: '',
+      odometerKilosPhotoId: null,
+      odometerHoursPhotoId: null,
+      odometerKilosPhotoName: '',
+      odometerHoursPhotoName: '',
+      odometerKilosPhotoPath: '',
+      odometerHoursPhotoPath: '',
+      fuelQuantity: '',
+      fuelStore: '',
+      contractType: '',
+      remarks: ''
+    }));
+
     localStorage.removeItem(`driver_${user.id}_shift`);
 
-    alert(`🏁 Shift ended at ${endTime}\nDuration: ${duration}\nVehicle: ${formData.plantNumber || 'N/A'}`);
+    alert(`🏁 Shift ended at ${new Date(endTime).toLocaleString()}\nDuration: ${duration}\nTotal Breakdown: ${totalBreakdownHours.toFixed(1)} hours`);
   };
 
   // Fuel transaction submission
@@ -1975,12 +3227,22 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
     setIsLoading(true);
 
     try {
+      // Validation checks
       if (!formData.plantNumber || !formData.fuelQuantity || !formData.fuelStore) {
         throw new Error('Please fill in all required fields');
       }
 
+      // Validate fuel store is not empty
+      if (formData.fuelStore.trim() === '') {
+        throw new Error('Please select or enter a valid fuel store');
+      }
+
       if (shiftStatus === 'OFF DUTY') {
         throw new Error('Please start your shift before recording transactions');
+      }
+
+      if (!driverSignature) {
+        throw new Error('Please provide your signature before recording transactions');
       }
 
       // Create odometer photos data
@@ -2016,7 +3278,10 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
         transactionDate: formData.transactionDate,
         remarks: formData.remarks,
         shiftStatus: shiftStatus,
+        shiftId: shiftData?.id,
         driverName: user.fullName,
+        signature: driverSignature,
+        breakdownFlag: isTransactionDuringBreakdown(new Date().toISOString()),
         timestamp: new Date().toISOString(),
         folderPath: `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/`
       }, user);
@@ -2185,24 +3450,20 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
     setActiveNav(navItem);
   };
 
-  // Debug function to check storage
-  const debugStorage = async () => {
-    console.log('=== STORAGE DEBUG ===');
-    
-    // Check IndexedDB
-    try {
-      const photos = await getAllPhotosFromDatabase();
-      const folders = await getAllFoldersFromDatabase();
-      
-      console.log('IndexedDB Photos:', photos.length);
-      console.log('IndexedDB Folders:', folders.length);
-      console.log('Photos sample:', photos.slice(0, 3));
-      
-      alert(`IndexedDB: ${photos.length} photos, ${folders.length} folders\nCheck console for details.`);
-    } catch (error) {
-      console.error('Debug error:', error);
-      alert('Error checking storage. See console.');
-    }
+  // Calculate shift duration
+  const calculateShiftDuration = () => {
+    if (!shiftStartTime) return '0h 0m';
+    const start = new Date(shiftStartTime);
+    const end = new Date();
+    const diff = end - start;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Calculate total breakdown hours
+  const calculateTotalBreakdownHours = () => {
+    return breakdowns.reduce((total, b) => total + parseFloat(b.hours || 0), 0).toFixed(1);
   };
 
   return (
@@ -2257,6 +3518,38 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                   }}>
                     {shiftStatus === 'ON DUTY' ? '🟢 ON DUTY' : '⚫ OFF DUTY'}
                   </div>
+                  {isOnBreakdown && (
+                    <div style={{ 
+                      padding: '2px 8px', 
+                      backgroundColor: '#d32f2f',
+                      borderRadius: '12px',
+                      fontSize: '11px'
+                    }}>
+                      ⚠️ BREAKDOWN
+                    </div>
+                  )}
+                  {isOnBreakdown && (
+                    <button 
+                      onClick={handleEndCurrentBreakdown}
+                      style={{ 
+                        padding: '6px 12px',
+                        backgroundColor: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        marginLeft: '5px'
+                      }}
+                    >
+                      ✅ End Breakdown
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2302,7 +3595,7 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
           </div>
         </div>
 
-        {/* Navigation Bar */}
+        {/* Navigation Bar - WITH MACHINE LOG BOOK BUTTON */}
         <div style={{ 
           backgroundColor: '#f8f9fa',
           padding: '0 25px',
@@ -2326,6 +3619,34 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
               }}
             >
               🏠 Dashboard
+            </button>
+            
+            {/* MACHINE LOG BOOK BUTTON */}
+            <button
+              onClick={onNavigateToMachineLogBook}
+              style={{ 
+                padding: '15px 20px',
+                backgroundColor: 'transparent',
+                color: '#666',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = '#1b5e20';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#666';
+              }}
+            >
+              📖 Machine Log Book
             </button>
             
             <button
@@ -2368,21 +3689,36 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
           </div>
         </div>
 
-        {/* Current Vehicle Info */}
+        {/* Current Vehicle & Shift Info */}
         {currentVehicle && (
           <div style={{ 
             padding: '10px 25px',
             backgroundColor: '#e8f5e8',
             borderBottom: '1px solid #c8e6c9'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ color: '#1b5e20', fontWeight: '600' }}>🚗 Current Vehicle:</span>
-              <span style={{ color: '#2e7d32', fontWeight: '600' }}>{currentVehicle}</span>
-              {formData.plantName && (
-                <span style={{ color: '#666', fontSize: '14px' }}>- {formData.plantName}</span>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div>
+                  <span style={{ color: '#1b5e20', fontWeight: '600' }}>🚗 Current Vehicle:</span>
+                  <span style={{ color: '#2e7d32', fontWeight: '600', marginLeft: '5px' }}>{currentVehicle}</span>
+                  {formData.plantName && (
+                    <span style={{ color: '#666', fontSize: '14px', marginLeft: '10px' }}>- {formData.plantName}</span>
+                  )}
+                </div>
+                <div>
+                  <span style={{ color: '#1b5e20', fontWeight: '600' }}>⏱️ Shift Duration:</span>
+                  <span style={{ color: '#2e7d32', fontWeight: '600', marginLeft: '5px' }}>{calculateShiftDuration()}</span>
+                </div>
+                {breakdowns.length > 0 && (
+                  <div>
+                    <span style={{ color: '#d32f2f', fontWeight: '600' }}>⚠️ Breakdown:</span>
+                    <span style={{ color: '#d32f2f', fontWeight: '600', marginLeft: '5px' }}>{calculateTotalBreakdownHours()}h</span>
+                  </div>
+                )}
+              </div>
+              
               {shiftStartTime && (
-                <span style={{ marginLeft: 'auto', color: '#666', fontSize: '12px' }}>
+                <span style={{ color: '#666', fontSize: '12px' }}>
                   Shift started: {formatTime(shiftStartTime)}
                 </span>
               )}
@@ -2465,6 +3801,50 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                 >
                   🏁 {shiftStatus === 'OFF DUTY' ? 'Not on Shift' : 'End Shift'}
                 </button>
+                
+                {shiftStatus === 'ON DUTY' && (
+                  <>
+                    <button 
+                      onClick={() => setShowSignatureModal(true)}
+                      style={{ 
+                        padding: '15px',
+                        backgroundColor: driverSignature ? '#4caf50' : '#2196f3',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      {driverSignature ? '✅ Signature Done' : '✍️ Provide Signature'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowBreakdownModal(true)}
+                      style={{ 
+                        padding: '15px',
+                        backgroundColor: isOnBreakdown ? '#d32f2f' : '#ff9800',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      {isOnBreakdown ? '⚠️ Breakdown Active' : '🚨 Report Breakdown'}
+                    </button>
+                  </>
+                )}
               </div>
               
               {shiftStartTime && (
@@ -2476,8 +3856,13 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                   border: '1px solid #e1f5fe'
                 }}>
                   <div style={{ fontSize: '14px', color: '#0277bd' }}>
-                    <strong>Shift started:</strong> {shiftStartTime}
+                    <strong>Shift started:</strong> {new Date(shiftStartTime).toLocaleString()}
                   </div>
+                  {driverSignature && (
+                    <div style={{ fontSize: '14px', color: '#4caf50', marginTop: '5px' }}>
+                      <strong>Signature:</strong> ✓ Provided at {formatTime(signatureTimestamp)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2501,6 +3886,7 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                     <div><strong>Fleet Number:</strong> {formData.plantNumber}</div>
                     <div><strong>Type:</strong> {formData.plantType}</div>
                     <div><strong>Description:</strong> {formData.plantName}</div>
+                    <div><strong>Start Odometer:</strong> {formData.odometerKilos || '0'} KM / {formData.odometerHours || '0'} hrs</div>
                   </div>
                   <button 
                     onClick={() => setShowQRScanner(true)}
@@ -2575,7 +3961,6 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                   📁 View Photo Gallery
                 </button>
                 
-                
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <button 
                     onClick={openCameraModal}
@@ -2627,6 +4012,53 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
             </div>
           </div>
 
+          {/* Breakdown Summary */}
+          {breakdowns.length > 0 && (
+            <div style={{ 
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              marginBottom: '25px',
+              border: '2px solid #ff9800'
+            }}>
+              <h3 style={{ color: '#d32f2f', marginBottom: '15px', fontSize: '18px' }}>⚠️ Breakdown Summary</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#ffebee' }}>
+                      <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ffcdd2', fontWeight: '600', color: '#d32f2f' }}>Start</th>
+                      <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ffcdd2', fontWeight: '600', color: '#d32f2f' }}>End</th>
+                      <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ffcdd2', fontWeight: '600', color: '#d32f2f' }}>Duration</th>
+                      <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ffcdd2', fontWeight: '600', color: '#d32f2f' }}>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {breakdowns.map((breakdown, index) => (
+                      <tr key={breakdown.id} style={{ borderBottom: '1px solid #ffcdd2' }}>
+                        <td style={{ padding: '10px' }}>{breakdown.startTime}</td>
+                        <td style={{ padding: '10px' }}>{breakdown.endTime}</td>
+                        <td style={{ padding: '10px', fontWeight: '600', color: '#d32f2f' }}>
+                          {breakdown.hours} hours
+                        </td>
+                        <td style={{ padding: '10px' }}>{breakdown.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '10px', 
+                backgroundColor: '#ffebee', 
+                borderRadius: '6px',
+                textAlign: 'center'
+              }}>
+                <strong>Total Breakdown Time:</strong> {calculateTotalBreakdownHours()} hours
+              </div>
+            </div>
+          )}
+
           {/* Vehicle Status Component */}
           {currentVehicle && (
             <div style={{ 
@@ -2673,24 +4105,46 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                     <div>
                       <div style={{ fontWeight: '600', color: '#0277bd' }}>Shift Information</div>
                       <div style={{ fontSize: '14px', color: '#666' }}>
-                        Started: {vehicleStatus.shiftStart}
+                        Started: {new Date(vehicleStatus.shiftStart).toLocaleString()}
                       </div>
+                      {breakdowns.length > 0 && (
+                        <div style={{ fontSize: '14px', color: '#d32f2f', marginTop: '5px' }}>
+                          Breakdown Time: {calculateTotalBreakdownHours()} hours
+                        </div>
+                      )}
                     </div>
-                    <button 
-                      onClick={handleShiftEnd}
-                      style={{ 
-                        padding: '8px 16px',
-                        backgroundColor: '#f57c00',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '14px'
-                      }}
-                    >
-                      End Shift
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => setShowBreakdownModal(true)}
+                        style={{ 
+                          padding: '8px 16px',
+                          backgroundColor: '#ff9800',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}
+                      >
+                        🚨 Breakdown
+                      </button>
+                      <button 
+                        onClick={handleShiftEnd}
+                        style={{ 
+                          padding: '8px 16px',
+                          backgroundColor: '#f57c00',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}
+                      >
+                        End Shift
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2706,6 +4160,43 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
             marginBottom: '25px'
           }}>
             <h3 style={{ color: '#1b5e20', marginBottom: '20px', fontSize: '20px' }}>⛽ New Fuel Transaction</h3>
+            
+            {/* Signature Warning */}
+            {shiftStatus === 'ON DUTY' && !driverSignature && (
+              <div style={{ 
+                backgroundColor: '#fff3e0', 
+                padding: '15px', 
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '2px solid #ffb74d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '20px', color: '#ff9800' }}>⚠️</span>
+                  <div>
+                    <strong style={{ color: '#ef6c00' }}>Signature Required</strong>
+                    <div style={{ fontSize: '14px', color: '#666' }}>Please provide your signature before recording transactions</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowSignatureModal(true)}
+                  style={{ 
+                    padding: '8px 16px',
+                    backgroundColor: '#ff9800',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}
+                >
+                  ✍️ Sign Now
+                </button>
+              </div>
+            )}
             
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' }}>
@@ -2783,36 +4274,93 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
 
                   <div style={{ marginBottom: '15px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>Fuel Store *</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <select
                         value={formData.fuelStore}
-                        onChange={(e) => setFormData({...formData, fuelStore: e.target.value})}
+                        onChange={(e) => {
+                          if (e.target.value === "CUSTOM") {
+                            setShowCustomFuelStoreModal(true);
+                          } else {
+                            setFormData({...formData, fuelStore: e.target.value});
+                          }
+                        }}
                         style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }}
                         required
                       >
                         <option value="">Select Store</option>
                         <option value="SASOL FLEET">SASOL FLEET</option>
                         <option value="STANDARD BANK FLEET">STANDARD BANK FLEET</option>
-                        <option value="CUSTOM">CUSTOM</option>
+                        
+                        {/* Custom Fuel Stores */}
+                        {customFuelStores.length > 0 && (
+                          <>
+                            <option disabled>─── Custom Stores ───</option>
+                            {customFuelStores.map((store, index) => (
+                              <option key={index} value={store}>{store}</option>
+                            ))}
+                          </>
+                        )}
+                        
+                        <option value="CUSTOM">+ Add Custom Fuel Store</option>
                       </select>
-                      {formData.fuelStore === 'CUSTOM' && (
-                        <button 
-                          type="button" 
-                          onClick={handleCustomFuelStore}
-                          style={{ 
-                            padding: '12px 15px',
-                            backgroundColor: '#ff9800',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                          }}
-                        >
-                          Custom
-                        </button>
-                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => setShowFuelStoreQRScanner(true)}
+                        style={{ 
+                          padding: '12px 15px',
+                          backgroundColor: '#4caf50',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        📱 Scan QR
+                      </button>
                     </div>
+                    
+                    {/* Display current fuel store */}
+                    {formData.fuelStore && (
+                      <div style={{ 
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        backgroundColor: '#e8f5e8',
+                        borderRadius: '6px',
+                        border: '1px solid #4caf50',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span style={{ color: '#1b5e20', fontWeight: '600' }}>Selected Store:</span>
+                        <span>{formData.fuelStore}</span>
+                        {formData.fuelStore !== 'SASOL FLEET' && formData.fuelStore !== 'STANDARD BANK FLEET' && (
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              // Remove the current custom store from list and show modal to edit
+                              const updatedStores = customFuelStores.filter(s => s !== formData.fuelStore);
+                              setCustomFuelStores(updatedStores);
+                              localStorage.setItem(`driver_${user.id}_customFuelStores`, JSON.stringify(updatedStores));
+                              setShowCustomFuelStoreModal(true);
+                            }}
+                            style={{ 
+                              marginLeft: 'auto',
+                              padding: '4px 8px',
+                              backgroundColor: '#ff9800',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2923,7 +4471,13 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <select
                         value={formData.contractType}
-                        onChange={(e) => setFormData({...formData, contractType: e.target.value})}
+                        onChange={(e) => {
+                          if (e.target.value === "Custom Site") {
+                            setShowCustomSiteModal(true);
+                          } else {
+                            setFormData({...formData, contractType: e.target.value});
+                          }
+                        }}
                         style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }}
                       >
                         <option value="">Select Contract</option>
@@ -2931,7 +4485,18 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                         <option value="HILLARY (Site 2163)">HILLARY (Site 2163)</option>
                         <option value="HILLARY (Site 2102)">HILLARY (Site 2102)</option>
                         <option value="Polokwane Surfacing (Site 1809)">Polokwane Surfacing (Site 1809)</option>
-                        <option value="Custom Site">Custom Site</option>
+                        
+                        {/* Custom Sites */}
+                        {customSites.length > 0 && (
+                          <>
+                            <option disabled>─── Custom Sites ───</option>
+                            {customSites.map((site, index) => (
+                              <option key={index} value={site}>{site}</option>
+                            ))}
+                          </>
+                        )}
+                        
+                        <option value="Custom Site">+ Add New Custom Site</option>
                       </select>
                       <button 
                         type="button" 
@@ -2965,6 +4530,7 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                       <div><strong>Name:</strong> {user.fullName}</div>
                       <div><strong>Employee #:</strong> {user.employeeNumber || 'N/A'}</div>
                       <div><strong>Company:</strong> {user.company || 'N/A'}</div>
+                      <div><strong>Signature:</strong> {driverSignature ? '✅ Provided' : '❌ Required'}</div>
                     </div>
                   </div>
 
@@ -2984,15 +4550,15 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
               <div style={{ textAlign: 'center' }}>
                 <button
                   type="submit"
-                  disabled={isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber}
+                  disabled={isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber || !driverSignature}
                   style={{ 
                     padding: '15px 40px',
-                    backgroundColor: isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber ? '#ccc' : '#1b5e20',
+                    backgroundColor: isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber || !driverSignature ? '#ccc' : '#1b5e20',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '16px',
-                    cursor: isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber ? 'not-allowed' : 'pointer',
+                    cursor: isLoading || shiftStatus === 'OFF DUTY' || !formData.plantNumber || !driverSignature ? 'not-allowed' : 'pointer',
                     fontWeight: 'bold',
                     transition: 'all 0.3s ease'
                   }}
@@ -3004,18 +4570,69 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                     Please start your shift before recording transactions
                   </p>
                 )}
+                {shiftStatus === 'ON DUTY' && !driverSignature && (
+                  <p style={{ color: '#d32f2f', marginTop: '10px', fontSize: '14px' }}>
+                    Please provide your signature before recording transactions
+                  </p>
+                )}
               </div>
             </form>
           </div>
 
-          {/* Recent Transactions */}
+          {/* Recent Transactions with Pagination */}
           <div style={{ 
             backgroundColor: 'white',
             padding: '25px',
             borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ color: '#1b5e20', marginBottom: '20px', fontSize: '20px' }}>📋 Recent Transactions</h3>
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            marginBottom: '25px'
+          }} className="transactions-section">
+            <h3 style={{ color: '#1b5e20', marginBottom: '20px', fontSize: '20px' }}>
+              📋 Recent Transactions 
+              <span style={{ fontSize: '14px', color: '#666', marginLeft: '10px', fontWeight: 'normal' }}>
+                (Showing {indexOfFirstTransaction + 1}-{Math.min(indexOfLastTransaction, transactions.length)} of {transactions.length})
+              </span>
+            </h3>
+            
+            {/* Items per page selector */}
+            {transactions.length > 5 && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px'
+              }}>
+                <div style={{ fontSize: '14px', color: '#666' }}>
+                  Transactions per page:
+                  <select
+                    value={transactionsPerPage}
+                    onChange={(e) => {
+                      setCurrentPage(1); // Reset to first page
+                      setTransactionsPerPage(Number(e.target.value));
+                    }}
+                    style={{
+                      marginLeft: '10px',
+                      padding: '4px 8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+                <div style={{ fontSize: '14px', color: '#666' }}>
+                  Page {currentPage} of {totalPages}
+                </div>
+              </div>
+            )}
+            
             {transactions.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
@@ -3029,47 +4646,58 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                 <p style={{ fontSize: '14px', color: '#999' }}>Start your shift and record your first transaction</p>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f8f9fa' }}>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Date</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Vehicle</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Fuel</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Store</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Odometer</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Contract</th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Photos</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.slice(0, 10).map((transaction, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '12px' }}>{transaction.transactionDate}</td>
-                        <td style={{ padding: '12px', fontWeight: '600', color: '#1b5e20' }}>
-                          {transaction.plantNumber}
-                        </td>
-                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#2e7d32' }}>
-                          {transaction.fuelQuantity}L
-                        </td>
-                        <td style={{ padding: '12px' }}>{transaction.fuelStore}</td>
-                        <td style={{ padding: '12px' }}>
-                          {transaction.odometerKilos ? `${transaction.odometerKilos} KM` : '-'}
-                          {transaction.odometerHours ? ` / ${transaction.odometerHours} hrs` : ''}
-                        </td>
-                        <td style={{ padding: '12px' }}>{transaction.contractType || '-'}</td>
-                        <td style={{ padding: '12px' }}>
-                          {transaction.odometerPhotos?.kilos?.photoName || transaction.odometerPhotos?.hours?.photoName ? (
-                            <span style={{ color: '#4caf50' }}>📷</span>
-                          ) : (
-                            <span style={{ color: '#999' }}>-</span>
-                          )}
-                        </td>
+              <>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8f9fa' }}>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Date</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Vehicle</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Fuel</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Store</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Odometer</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Signature</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Breakdown</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {currentTransactions.map((transaction, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '12px' }}>{transaction.transactionDate}</td>
+                          <td style={{ padding: '12px', fontWeight: '600', color: '#1b5e20' }}>
+                            {transaction.plantNumber}
+                          </td>
+                          <td style={{ padding: '12px', fontWeight: 'bold', color: '#2e7d32' }}>
+                            {transaction.fuelQuantity}L
+                          </td>
+                          <td style={{ padding: '12px' }}>{transaction.fuelStore}</td>
+                          <td style={{ padding: '12px' }}>
+                            {transaction.odometerKilos ? `${transaction.odometerKilos} KM` : '-'}
+                            {transaction.odometerHours ? ` / ${transaction.odometerHours} hrs` : ''}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            {transaction.signature ? (
+                              <span style={{ color: '#4caf50' }}>✅</span>
+                            ) : (
+                              <span style={{ color: '#d32f2f' }}>❌</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            {transaction.breakdownFlag ? (
+                              <span style={{ color: '#d32f2f' }}>⚠️</span>
+                            ) : (
+                              <span style={{ color: '#4caf50' }}>✓</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Pagination */}
+                {renderPagination()}
+              </>
             )}
           </div>
         </>
@@ -3103,7 +4731,8 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Fuel (L)</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Store</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Photos</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Shift</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Signature</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd', fontWeight: '600', color: '#333' }}>Breakdown</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3125,15 +4754,18 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
                         )}
                       </td>
                       <td style={{ padding: '12px' }}>
-                        <span style={{ 
-                          padding: '4px 8px', 
-                          borderRadius: '12px',
-                          backgroundColor: transaction.shiftStatus === 'ON DUTY' ? '#e8f5e8' : '#f5f5f5',
-                          color: transaction.shiftStatus === 'ON DUTY' ? '#1b5e20' : '#666',
-                          fontSize: '12px'
-                        }}>
-                          {transaction.shiftStatus || 'OFF DUTY'}
-                        </span>
+                        {transaction.signature ? (
+                          <span style={{ color: '#4caf50' }}>✅</span>
+                        ) : (
+                          <span style={{ color: '#d32f2f' }}>❌</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        {transaction.breakdownFlag ? (
+                          <span style={{ color: '#d32f2f' }}>⚠️</span>
+                        ) : (
+                          <span style={{ color: '#4caf50' }}>✓</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -3173,12 +4805,42 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
             </div>
             <div style={{ marginBottom: '15px' }}>
               <strong>Company:</strong> {user.company || 'N/A'}
+              {/* Show specific company info if available */}
+              {user.company && (
+                <span style={{ 
+                  marginLeft: '10px',
+                  padding: '2px 8px',
+                  backgroundColor: '#1b5e20',
+                  color: 'white',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '500'
+                }}>
+                  {user.company === 'Hillary' ? '🏢 Hillary Construction' : 
+                   user.company === 'Polokwane Surfacing' ? '🏗️ Polokwane Surfacing' : 
+                   user.company}
+                </span>
+              )}
             </div>
             <div style={{ marginBottom: '15px' }}>
               <strong>Role:</strong> {user.role || 'Driver'}
             </div>
-            <div>
+            <div style={{ marginBottom: '15px' }}>
+              <strong>Current Shift:</strong> {shiftStatus}
+              {shiftStatus === 'ON DUTY' && shiftStartTime && (
+                <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px' }}>
+                  (Started: {formatTime(shiftStartTime)})
+                </span>
+              )}
+            </div>
+            <div style={{ marginBottom: '15px' }}>
               <strong>Total Transactions:</strong> {transactions.length}
+              <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px' }}>
+                ({transactions.filter(t => t.signature).length} signed)
+              </span>
+            </div>
+            <div>
+              <strong>Current Vehicle:</strong> {currentVehicle || 'None'}
             </div>
           </div>
         </div>
@@ -3189,6 +4851,14 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
         <QRScanner 
           onScan={handleQRScan}
           onClose={() => setShowQRScanner(false)}
+        />
+      )}
+
+      {showFuelStoreQRScanner && (
+        <QRScanner 
+          onScan={handleFuelStoreQRScan}
+          onClose={() => setShowFuelStoreQRScanner(false)}
+          title="Scan Fuel Store QR Code"
         />
       )}
 
@@ -3225,6 +4895,39 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
         <CustomSiteModal
           onSave={handleAddCustomSite}
           onClose={() => setShowCustomSiteModal(false)}
+        />
+      )}
+
+      {showCustomFuelStoreModal && (
+        <CustomFuelStoreModal
+          onSave={handleAddCustomFuelStore}
+          onClose={() => setShowCustomFuelStoreModal(false)}
+        />
+      )}
+
+      {showSignatureModal && (
+        <SignatureModal
+          onSave={handleSignatureSave}
+          onClose={() => setShowSignatureModal(false)}
+        />
+      )}
+
+      {showBreakdownModal && (
+        <BreakdownModal
+          onSave={handleBreakdownSave}
+          onClose={() => setShowBreakdownModal(false)}
+          shiftStartTime={shiftStartTime}
+        />
+      )}
+
+      {showEndShiftModal && (
+        <EndShiftModal
+          onConfirm={handleConfirmShiftEnd}
+          onClose={() => setShowEndShiftModal(false)}
+          shiftData={shiftData}
+          odometerKilos={formData.odometerKilos}
+          odometerHours={formData.odometerHours}
+          onOdometerScan={handleOdometerUpload}
         />
       )}
 
@@ -3301,44 +5004,44 @@ const DriverDashboard = ({ user, onLogout, onNavigateToAdmin }) => {
         </div>
       )}
       
-        {/* ==================== FOOTER ==================== */}
-        <div style={{
-          backgroundColor: 'white',
-          borderTop: '1px solid #e0e0e0',
-          padding: '20px 30px',
-          textAlign: 'center',
-          color: '#666',
-          fontSize: '14px'
+      {/* ==================== FOOTER ==================== */}
+      <div style={{
+        backgroundColor: 'white',
+        borderTop: '1px solid #e0e0e0',
+        padding: '20px 30px',
+        textAlign: 'center',
+        color: '#666',
+        fontSize: '14px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '12px', 
+          flexWrap: 'wrap' 
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            gap: '12px', 
-            flexWrap: 'wrap' 
-          }}>
-            <span>© 2025 Fuel Management System. All rights reserved.</span>
-            <span style={{ color: '#1b5e20' }}>|</span>
-            <span>
-              Created by 
-              <a 
-                href="https://port-lee.vercel.app/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ 
-                  color: '#1b5e20', 
-                  textDecoration: 'none',
-                  marginLeft: '5px',
-                  fontWeight: '600'
-                }}
-              >
-                Lethabo Mokgokoloshi 
-              </a>
-            </span>
-          </div>
+          <span>© 2025 Fuel Management System. All rights reserved.</span>
+          <span style={{ color: '#1b5e20' }}>|</span>
+          <span>
+            Created by 
+            <a 
+              href="https://port-lee.vercel.app/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ 
+                color: '#1b5e20', 
+                textDecoration: 'none',
+                marginLeft: '5px',
+                fontWeight: '600'
+              }}
+            >
+              Lethabo Mokgokoloshi 
+            </a>
+          </span>
+       
         </div>
+      </div>
     </div>
-    
   );
 };
 
